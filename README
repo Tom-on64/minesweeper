@@ -1,0 +1,32 @@
+Minesweeper
+===========
+
+This is a minimal version of minesweeper written in C with SDL2.
+It currently doesn't draw text, so it uses colors to display the tiles.
+
+Tile colors
+-----------
+Unknown tile	- Gray
+Flagged		- Yellow
+Mine		- Black
+Empty		- Dark gray
+1 Mine		- Blue
+2 Mines		- Green
+3 Mines		- Red
+4 Mines		- Dark blue
+5 Mines		- Dark red
+6 Mines		- Cyan
+7 Mines		- Purple
+8 Mines		- Light gray
+9 Mines :)	- White
+
+Flags
+-----
+-d <w> <h>	Specify minefield dimensions
+-h 		Prints usage
+-m <n>		Specify number of mines
+
+Building
+--------
+Run `make` to build and run `make install` (may require root) to install.
+

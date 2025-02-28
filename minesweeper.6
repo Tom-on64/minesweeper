@@ -1,0 +1,85 @@
+.TH MINESWEEPER 6 "minesweeper"
+
+.SH NAME
+minesweeper \- A minimalistic Minesweeper game using SDL2
+
+.SH SYNOPSIS
+.B minesweeper
+[\-h] [\-d \fIw\fR \fIh\fR] [\-m \fIn\fR]
+
+.SH DESCRIPTION
+.B minesweeper
+is a simple Minesweeper game implemented using SDL2. Instead of displaying numbers, it uses colors to indicate the number of adjacent mines.
+
+.SH OPTIONS
+.TP
+.B \-h
+Prints a usage message and exits.
+
+.TP
+.B \-d \fIw\fR \fIh\fR
+Specifies the minefield dimensions. The width \fIw\fR and height \fIh\fR must be positive integers.
+
+.TP
+.B \-m \fIn\fR
+Specifies the number of mines in the minefield. \fIn\fR must be a positive integer.
+
+.SH COLOR SCHEME
+Each tile type is represented by a color:
+
+.RS
+.TS
+l l.
+Unknown tile	Gray
+Flagged		Yellow
+Mine		Black
+Empty		Dark Gray
+1 Mine		Blue
+2 Mines		Green
+3 Mines		Red
+4 Mines		Dark Blue
+5 Mines		Dark Red
+6 Mines		Cyan
+7 Mines		Purple
+8 Mines		Light Gray
+9 Mines :)	White
+.TE
+.RE
+
+.SH CONTROLS
+The game is played using a mouse:
+.IP \(bu
+Left click to reveal a tile.
+.IP \(bu
+Right click to flag a tile.
+
+.SH EXIT STATUS
+.TP
+0
+Successful execution.
+.TP
+1
+Invalid arguments or failure to initialize SDL2.
+
+.SH EXAMPLES
+Launch the game with a 10x10 grid and 20 mines:
+.PP
+.EX
+$ minesweeper -d 10 10 -m 20
+.EE
+
+Display usage information:
+.PP
+.EX
+$ minesweeper -h
+.EE
+
+.SH AUTHOR
+Written by Tom-on.
+
+.SH BUGS
+No known bugs. If you encounter any, please report them.
+
+.SH LICENSE
+This software is distributed under an open-source license. See the source code for details.
+
