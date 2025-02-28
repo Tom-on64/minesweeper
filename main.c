@@ -200,9 +200,10 @@ void handleEvents(int* quit) {
 
 void revealTile(int x, int y) {
 	cell_t* cell = cellat(x, y);
-	grid.u--;
-	if (cell->flagged) return;
 
+	if (cell->revealed || cell->flagged) return;
+
+	grid.u--;
 	if (cell->mine && firstMove) {
 		initGrid(grid.w, grid.h, grid.c);
 		revealTile(x, y);
@@ -225,14 +226,13 @@ void flagTile(int x, int y) {
 
 void win(void) {
 	printf("You won!\n");
-	SDL_Delay(1000);
-	quit = 1;
+	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
 }
 
 void lose(void) {
 	printf("Game over!\n");
 	SDL_Delay(1000);
-	quit = 1;
+	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
 }
 
 __attribute__ ((noreturn))
