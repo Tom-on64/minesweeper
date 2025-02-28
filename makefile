@@ -16,7 +16,7 @@ $(OUT): $(OBJ)
 	$(CC) $(CCFLAGS) -c -o $@ $^
 
 clean:
-	rm -f $(OUT)
+	rm -f $(OUT) $(OBJ)
 
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin

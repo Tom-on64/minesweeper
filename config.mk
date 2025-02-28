@@ -1,5 +1,7 @@
 # Configuration file
 
+VERSION = "1.0.0"
+
 PREFIX = /usr/local
 MANFIX = $(PREFIX)/share/man
 
