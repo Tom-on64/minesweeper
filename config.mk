@@ -1,6 +1,6 @@
 # Configuration file
 
-VERSION = "1.1.0"
+VERSION = "1.1.2"
 
 PREFIX = /usr/local
 MANFIX = $(PREFIX)/share/man
