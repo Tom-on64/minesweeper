@@ -36,6 +36,13 @@
 		0xFF\
 		)
 
+enum {
+	S_FIRST_MOVE,
+	S_IN_GAME,
+	S_WIN,
+	S_LOSE,
+};
+
 typedef struct {
 	int mine;
 	int revealed;
@@ -51,7 +58,7 @@ struct {
 } grid;
 
 int quit = 0;
-int first_move = 1;
+int state = S_FIRST_MOVE;
 char* exename = NULL;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -115,7 +122,26 @@ int main(int argc, char** argv) {
 		if (grid.u <= grid.c) win();
 
 		handle_events(&quit);
+
 		draw_grid();
+
+		SDL_Rect rect = {
+			24, 
+			24,
+			(FONT_SIZE * ((state == S_WIN) ? 10 : 13)) * 2,
+			(FONT_SIZE) * 4,
+		};
+
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0x33);
+		if (state == S_WIN) {
+			SDL_RenderFillRect(renderer, &rect);
+			draw_text(" You Won! ", COL_WIN, &rect);
+		} else if (state == S_LOSE) {
+
+			SDL_RenderFillRect(renderer, &rect);
+			draw_text(" You Lost :( ", COL_LOSE, &rect);
+		}
+
 		SDL_RenderPresent(renderer);
 		SDL_Delay(5);
 	}
@@ -244,13 +270,13 @@ void reveal_tile(int x, int y) {
 	if (cell->revealed || cell->flagged) return;
 
 	grid.u--;
-	if (cell->mine && first_move) {
+	if (cell->mine && state == S_FIRST_MOVE) {
 		init_grid(grid.w, grid.h, grid.c);
 		reveal_tile(x, y);
 		return;
 	}
 
-	first_move = 0;
+	state = S_IN_GAME;
 	cell->revealed = 1;
 	if (cell->mine) {
 		lose();
@@ -276,13 +302,13 @@ void flag_tile(int x, int y) {
 }
 
 void win(void) {
-	// TODO: Display a message
 	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
+	state = S_WIN;
 }
 
 void lose(void) {
-	// TODO: Display a message
 	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
+	state = S_LOSE;
 }
 
 __attribute__ ((noreturn))
