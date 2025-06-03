@@ -16,6 +16,8 @@
 #define COL_TILE	0xAAAAAA
 #define COL_MINE	0x0C0C0C
 #define COL_FLAG	0xFFFF00
+#define COL_WIN		0x00FF00
+#define COL_LOSE	0xFF0000
 #define COL_E0		0x777777
 #define COL_E1		0x0000FF
 #define COL_E2		0x008000
@@ -58,6 +60,7 @@ TTF_Font* font = NULL;
 cell_t* cellat(int x, int y);
 void init_grid(int w, int h, int c);
 int count_mines(int x, int y);
+void draw_text(char* txt, uint32_t col, SDL_Rect* rect);
 void draw_grid(void);
 void handle_events(int* quit);
 void reveal_tile(int x, int y);
@@ -162,6 +165,23 @@ int count_mines(int x, int y) {
 	return n;
 }
 
+void draw_text(char* txt, uint32_t col, SDL_Rect* rect) {
+	SDL_Color text_col = { 
+		(col >> 16) & 0xff,
+		(col >> 8)  & 0xff,
+		(col)       & 0xff,
+		0xff,
+	};
+
+	SDL_Surface* surface = TTF_RenderText_Solid(font, txt, text_col);
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+	SDL_RenderCopy(renderer, texture, NULL, rect);
+
+	SDL_DestroyTexture(texture);
+	SDL_FreeSurface(surface);
+}
+
 void draw_grid(void) {
 	for (int i = 0; i < grid.w * grid.h; i++) {
 		int x = i % grid.w;
@@ -190,24 +210,14 @@ void draw_grid(void) {
 
 		char msg[2] = { '0' + mine_count, '\0' };
 
-		SDL_Color text_col = { 
-			(COL_FONT >> 16)& 0xff,
-			(COL_FONT >> 8)	& 0xff,
-			(COL_FONT)	& 0xff,
-			0xff,
-		};
-		SDL_Surface* surface = TTF_RenderText_Solid(font, msg, text_col);
-		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
 		SDL_RenderFillRect(renderer, &rect);
 		COLOR(COL_BORDER);
 		SDL_RenderDrawRect(renderer, &rect);
 		if (cell->revealed && !cell->mine && mine_count > 0) {
-			SDL_RenderCopy(renderer, texture, NULL, &rect);
+			draw_text(msg, COL_FONT, &rect);
 		}
 
-		SDL_DestroyTexture(texture);
-		SDL_FreeSurface(surface);
 	}
 }
 
@@ -229,6 +239,7 @@ void handle_events(int* quit) {
 
 void reveal_tile(int x, int y) {
 	cell_t* cell = cellat(x, y);
+	if (cell == NULL) return;
 
 	if (cell->revealed || cell->flagged) return;
 
@@ -244,6 +255,17 @@ void reveal_tile(int x, int y) {
 	if (cell->mine) {
 		lose();
 	}
+
+	if (count_mines(x, y) == 0) {
+		reveal_tile(x + 1, y + 1);
+		reveal_tile(x + 0, y + 1);
+		reveal_tile(x - 1, y + 1);
+		reveal_tile(x + 1, y + 0);
+		reveal_tile(x - 1, y + 0);
+		reveal_tile(x + 1, y - 1);
+		reveal_tile(x + 0, y - 1);
+		reveal_tile(x - 1, y - 1);
+	}
 }
 
 void flag_tile(int x, int y) {
@@ -254,13 +276,12 @@ void flag_tile(int x, int y) {
 }
 
 void win(void) {
-	printf("You won!\n");
+	// TODO: Display a message
 	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
 }
 
 void lose(void) {
-	printf("Game over!\n");
-	SDL_Delay(1000);
+	// TODO: Display a message
 	for (int i = 0; i < grid.w * grid.h; i++) grid.cells[i].revealed = 1;
 }
 
