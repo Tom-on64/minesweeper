@@ -13,7 +13,7 @@ $(OUT): $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -c -o $@ $^
+	$(CC) $(CCFLAGS) -DVERSION='$(VERSION)' -c -o $@ $^
 
 clean:
 	rm -f $(OUT) $(OBJ)
