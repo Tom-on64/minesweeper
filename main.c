@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -8,26 +9,29 @@
 #define DEF_HEIGHT	16
 #define DEF_MINES	64
 #define TILE_SIZE	32
+#define FONT		"/usr/share/fonts/TTF/DejaVuSansMono.ttf"
+#define FONT_SIZE	16
+#define COL_FONT	0xCCCCCC
 #define COL_BORDER	0x000000
-#define COL_TILE	0xaaaaaa
-#define COL_MINE	0x0c0c0c
-#define COL_FLAG	0xffff00
+#define COL_TILE	0xAAAAAA
+#define COL_MINE	0x0C0C0C
+#define COL_FLAG	0xFFFF00
 #define COL_E0		0x777777
-#define COL_E1		0x0000ff
+#define COL_E1		0x0000FF
 #define COL_E2		0x008000
-#define COL_E3		0xff0000
+#define COL_E3		0xFF0000
 #define COL_E4		0x000060
 #define COL_E5		0x600000
 #define COL_E6		0x008080
 #define COL_E7		0x800080
 #define COL_E8		0x777777
-#define COL_E9		0xffffff
+#define COL_E9		0xFFFFFF
 #define COLOR(_c)	SDL_SetRenderDrawColor(\
 		renderer,\
-		((_c) >> 16) & 0xff,\
-		((_c) >> 8)  & 0xff,\
-		((_c) >> 0)  & 0xff,\
-		0xff\
+		((_c) >> 16) & 0xFF,\
+		((_c) >> 8)  & 0xFF,\
+		((_c) >> 0)  & 0xFF,\
+		0xFF\
 		)
 
 typedef struct {
@@ -45,18 +49,19 @@ struct {
 } grid;
 
 int quit = 0;
-int firstMove = 1;
+int first_move = 1;
 char* exename = NULL;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
+TTF_Font* font = NULL;
 
 cell_t* cellat(int x, int y);
-void initGrid(int w, int h, int c);
-int countMines(int x, int y);
-void drawGrid(void);
-void handleEvents(int* quit);
-void revealTile(int x, int y);
-void flagTile(int x, int y);
+void init_grid(int w, int h, int c);
+int count_mines(int x, int y);
+void draw_grid(void);
+void handle_events(int* quit);
+void reveal_tile(int x, int y);
+void flag_tile(int x, int y);
 void cleanup(void);
 void win(void);
 void lose(void);
@@ -68,6 +73,7 @@ int main(int argc, char** argv) {
 	int height = DEF_HEIGHT;
 	int mines = DEF_MINES;
 	
+	// Argument parsing :(
 	for (int i = 1; i < argc; i++) {
 		char* arg = argv[i];
 
@@ -79,13 +85,14 @@ int main(int argc, char** argv) {
 			height = atoi(argv[++i]);
 			break;
 		case 'h':
-			printf("Usage: %s [-m <count>] [-d <width> <height>]\n");
+			printf("Usage: %s [-m <count>] [-d <width> <height>]\n", exename);
 			return 0;
 		case 'm': mines = atoi(argv[++i]); break;
 		}
 	}
 	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) cleanup();
+	if (TTF_Init() != 0) cleanup();
 
 	window = SDL_CreateWindow(WIN_TITLE, 
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -96,13 +103,16 @@ int main(int argc, char** argv) {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	if (!renderer) cleanup();
 
-	initGrid(width, height, mines);
+	font = TTF_OpenFont(FONT, FONT_SIZE);
+	if (!font) cleanup();
+
+	init_grid(width, height, mines);
 
 	while (!quit) {
 		if (grid.u <= grid.c) win();
 
-		handleEvents(&quit);
-		drawGrid();
+		handle_events(&quit);
+		draw_grid();
 		SDL_RenderPresent(renderer);
 		SDL_Delay(5);
 	}
@@ -117,7 +127,7 @@ cell_t* cellat(int x, int y) {
 	return &grid.cells[pos];
 }
 
-void initGrid(int w, int h, int c) {
+void init_grid(int w, int h, int c) {
 	grid.cells = malloc(w * h * sizeof(*grid.cells));
 	memset(grid.cells, 0, w * h * sizeof(*grid.cells));
 	grid.w = w;
@@ -135,54 +145,73 @@ void initGrid(int w, int h, int c) {
 	}
 }
 
-#define _checkMine(_x, _y) if (cellat((_x), (_y)) && cellat((_x), (_y))->mine) n++;
-int countMines(int x, int y) {
+#define _check_mine(_x, _y) if (cellat((_x), (_y)) && cellat((_x), (_y))->mine) n++;
+int count_mines(int x, int y) {
 	int n = 0;
 
-	_checkMine(x - 1, y - 1);
-	_checkMine(x,     y - 1);
-	_checkMine(x + 1, y - 1);
-	_checkMine(x - 1, y    );
-	_checkMine(x,     y    );
-	_checkMine(x + 1, y    );
-	_checkMine(x - 1, y + 1);
-	_checkMine(x,     y + 1);
-	_checkMine(x + 1, y + 1);
+	_check_mine(x - 1, y - 1);
+	_check_mine(x,     y - 1);
+	_check_mine(x + 1, y - 1);
+	_check_mine(x - 1, y    );
+	_check_mine(x,     y    );
+	_check_mine(x + 1, y    );
+	_check_mine(x - 1, y + 1);
+	_check_mine(x,     y + 1);
+	_check_mine(x + 1, y + 1);
 
 	return n;
 }
 
-void drawGrid(void) {
+void draw_grid(void) {
 	for (int i = 0; i < grid.w * grid.h; i++) {
 		int x = i % grid.w;
 		int y = i / grid.w;
 
 		cell_t* cell = cellat(x, y);
 		SDL_Rect rect = { x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
+
+		int mine_count = count_mines(x, y);
 		
 		if (!cell->revealed && cell->flagged) COLOR(COL_FLAG);
 		else if (!cell->revealed) COLOR(COL_TILE);
 		else if (cell->mine) COLOR(COL_MINE);
-		else switch(countMines(x, y)) {
-		case 0: COLOR(COL_E0); break;
-		case 1: COLOR(COL_E1); break;
-		case 2: COLOR(COL_E2); break;
-		case 3: COLOR(COL_E3); break;
-		case 4: COLOR(COL_E4); break;
-		case 5: COLOR(COL_E5); break;
-		case 6: COLOR(COL_E6); break;
-		case 7: COLOR(COL_E7); break;
-		case 8: COLOR(COL_E8); break;
-		case 9: COLOR(COL_E9); break;
+		else switch(mine_count) {
+			case 0: COLOR(COL_E0); break;
+			case 1: COLOR(COL_E1); break;
+			case 2: COLOR(COL_E2); break;
+			case 3: COLOR(COL_E3); break;
+			case 4: COLOR(COL_E4); break;
+			case 5: COLOR(COL_E5); break;
+			case 6: COLOR(COL_E6); break;
+			case 7: COLOR(COL_E7); break;
+			case 8: COLOR(COL_E8); break;
+			case 9: COLOR(COL_E9); break;
 		}
+
+		char msg[2] = { '0' + mine_count, '\0' };
+
+		SDL_Color text_col = { 
+			(COL_FONT >> 16)& 0xff,
+			(COL_FONT >> 8)	& 0xff,
+			(COL_FONT)	& 0xff,
+			0xff,
+		};
+		SDL_Surface* surface = TTF_RenderText_Solid(font, msg, text_col);
+		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
 		SDL_RenderFillRect(renderer, &rect);
 		COLOR(COL_BORDER);
 		SDL_RenderDrawRect(renderer, &rect);
+		if (cell->revealed && !cell->mine && mine_count > 0) {
+			SDL_RenderCopy(renderer, texture, NULL, &rect);
+		}
+
+		SDL_DestroyTexture(texture);
+		SDL_FreeSurface(surface);
 	}
 }
 
-void handleEvents(int* quit) {
+void handle_events(int* quit) {
 	SDL_Event e;
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_QUIT) {
@@ -193,31 +222,31 @@ void handleEvents(int* quit) {
 		int x = e.button.x / TILE_SIZE;
 		int y = e.button.y / TILE_SIZE;
 
-		if (e.button.button == SDL_BUTTON_LEFT) revealTile(x, y);
-		else if (e.button.button == SDL_BUTTON_RIGHT) flagTile(x, y);
+		if (e.button.button == SDL_BUTTON_LEFT) reveal_tile(x, y);
+		else if (e.button.button == SDL_BUTTON_RIGHT) flag_tile(x, y);
 	}
 }
 
-void revealTile(int x, int y) {
+void reveal_tile(int x, int y) {
 	cell_t* cell = cellat(x, y);
 
 	if (cell->revealed || cell->flagged) return;
 
 	grid.u--;
-	if (cell->mine && firstMove) {
-		initGrid(grid.w, grid.h, grid.c);
-		revealTile(x, y);
+	if (cell->mine && first_move) {
+		init_grid(grid.w, grid.h, grid.c);
+		reveal_tile(x, y);
 		return;
 	}
 
-	firstMove = 0;
+	first_move = 0;
 	cell->revealed = 1;
 	if (cell->mine) {
 		lose();
 	}
 }
 
-void flagTile(int x, int y) {
+void flag_tile(int x, int y) {
 	cell_t* cell = cellat(x, y);
 	cell->flagged = !cell->flagged;
 	if (cell->mine && cell->flagged) grid.u--;
@@ -238,8 +267,10 @@ void lose(void) {
 __attribute__ ((noreturn))
 void cleanup(void) {
 	if (grid.cells) free(grid.cells);
+	if (font) TTF_CloseFont(font);
 	if (renderer) SDL_DestroyRenderer(renderer);
 	if (window) SDL_DestroyWindow(window);
+
 	SDL_Quit();
 	exit(0);
 }

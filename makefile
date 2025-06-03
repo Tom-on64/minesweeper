@@ -1,7 +1,7 @@
 include config.mk
 
 SRC = ./main.c
-OBJ = $(SRC:.c=.o)
+OBJ = ./main.o
 OUT = ./minesweeper
 MANPAGE = ./minesweeper.6
 
@@ -12,7 +12,7 @@ all: $(OUT)
 $(OUT): $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $^
 
-%.c: %.o
+%.o: %.c
 	$(CC) $(CCFLAGS) -c -o $@ $^
 
 clean:
