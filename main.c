@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
 	init_grid(width, height, mines);
 
 	while (!quit) {
-		if (grid.u <= grid.c) win();
+		if (grid.u < grid.c) win();
 
 		handle_events(&quit);
 
@@ -164,9 +164,10 @@ void init_grid(int w, int h, int c) {
 	}
 }
 
-#define _check_mine(_x, _y) if (cellat((_x), (_y)) && cellat((_x), (_y))->mine) n++;
 int count_mines(int x, int y) {
 	int n = 0;
+
+	#define _check_mine(_x, _y) if (cellat((_x), (_y)) && cellat((_x), (_y))->mine) n++;
 
 	_check_mine(x - 1, y - 1);
 	_check_mine(x,     y - 1);
@@ -259,7 +260,6 @@ void reveal_tile(int x, int y) {
 
 	if (cell->revealed || cell->flagged) return;
 
-	grid.u--;
 	if (cell->mine && state == S_FIRST_MOVE) {
 		init_grid(grid.w, grid.h, grid.c);
 		reveal_tile(x, y);
@@ -268,6 +268,7 @@ void reveal_tile(int x, int y) {
 
 	state = S_IN_GAME;
 	cell->revealed = 1;
+	grid.u--;
 	if (cell->mine) {
 		lose();
 	}
@@ -287,8 +288,6 @@ void reveal_tile(int x, int y) {
 void flag_tile(int x, int y) {
 	cell_t* cell = cellat(x, y);
 	cell->flagged = !cell->flagged;
-	if (cell->mine && cell->flagged) grid.u--;
-	else if (cell->mine) grid.u++;
 }
 
 void win(void) {
