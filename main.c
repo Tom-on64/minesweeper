@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 			(FONT_SIZE) * 4,
 		};
 
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0x33);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 10);
 		if (state == S_WIN) {
 			SDL_RenderFillRect(renderer, &rect);
 			draw_text(" You Won! ", COL_WIN, &rect);
@@ -160,7 +160,8 @@ void init_grid(int w, int h, int c) {
 		int x = rand() % grid.w;
 		int y = rand() % grid.h;
 
-		cellat(x, y)->mine = 1;
+		if (cellat(x, y)->mine) i--;
+		else cellat(x, y)->mine = 1;
 	}
 }
 
