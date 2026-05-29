@@ -10,7 +10,9 @@
 #define TILE_SIZE	32
 
 // TTF file and font size
-#define FONT		"/usr/share/fonts/TTF/DejaVuSansMono.ttf"
+#define USE_FONT
+// #undef USE_FONT 	// No text
+#define FONT		"/usr/share/fonts/TTF/Arial.TTF"
 #define FONT_SIZE	16
 
 // Colorscheme

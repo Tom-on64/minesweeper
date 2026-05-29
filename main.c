@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -46,7 +45,11 @@ int state = S_FIRST_MOVE;
 char* exename = NULL;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
+
+#ifdef USE_FONT
+#include <SDL2/SDL_ttf.h>
 TTF_Font* font = NULL;
+#endif
 
 cell_t* cellat(int x, int y);
 void init_grid(int w, int h, int c);
@@ -92,7 +95,11 @@ int main(int argc, char** argv) {
 	}
 	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) cleanup();
+#ifdef USE_FONT
 	if (TTF_Init() != 0) cleanup();
+	font = TTF_OpenFont(FONT, FONT_SIZE);
+	if (!font) cleanup();
+#endif
 
 	window = SDL_CreateWindow(WIN_TITLE, 
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -103,8 +110,6 @@ int main(int argc, char** argv) {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	if (!renderer) cleanup();
 
-	font = TTF_OpenFont(FONT, FONT_SIZE);
-	if (!font) cleanup();
 
 	init_grid(width, height, mines);
 
@@ -127,7 +132,6 @@ int main(int argc, char** argv) {
 			SDL_RenderFillRect(renderer, &rect);
 			draw_text(" You Won! ", COL_WIN, &rect);
 		} else if (state == S_LOSE) {
-
 			SDL_RenderFillRect(renderer, &rect);
 			draw_text(" You Lost :( ", COL_LOSE, &rect);
 		}
@@ -183,7 +187,9 @@ int count_mines(int x, int y) {
 	return n;
 }
 
-void draw_text(char* txt, uint32_t col, SDL_Rect* rect) {
+void draw_text(char* txt, uint32_t col, SDL_Rect* rect)
+#ifdef USE_FONT
+{
 	SDL_Color text_col = { 
 		(col >> 16) & 0xff,
 		(col >> 8)  & 0xff,
@@ -199,6 +205,9 @@ void draw_text(char* txt, uint32_t col, SDL_Rect* rect) {
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 }
+#else
+{ (void)txt; (void)col; (void)rect; }
+#endif
 
 void draw_grid(void) {
 	for (int i = 0; i < grid.w * grid.h; i++) {
@@ -304,7 +313,9 @@ void lose(void) {
 __attribute__ ((noreturn))
 void cleanup(void) {
 	if (grid.cells) free(grid.cells);
+#ifdef USE_FONT
 	if (font) TTF_CloseFont(font);
+#endif
 	if (renderer) SDL_DestroyRenderer(renderer);
 	if (window) SDL_DestroyWindow(window);
 
